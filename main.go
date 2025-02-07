@@ -112,14 +112,22 @@ func (r Reader) String() string {
 
 func AddReader(db *sql.DB, name string, address string, phone string) (int64, error) {
 	sqlStatement := `
-					INSERT INTO readers (reader_name, reader_adress, reader_phone) VALUES ($1, $2, $3) RETURNING reader_num`
+	INSERT INTO readers 
+		(reader_name, reader_adress, reader_phone) 
+	VALUES ($1, $2, $3) 
+	RETURNING reader_num`
 
 	var readerID int64
 	err := db.QueryRow(sqlStatement, name, address, phone).Scan(&readerID)
 	return readerID, err
 }
 func UpdateReader(db *sql.DB, reader Reader) error {
-	query := `UPDATE readers SET reader_name = $1, reader_adress = $2, reader_phone = $3 WHERE reader_num = $4`
+	query := `
+	UPDATE readers SET 
+		reader_name = $1, 
+		reader_adress = $2, 
+		reader_phone = $3 
+	WHERE reader_num = $4`
 	_, err := db.Exec(query, reader.Name, reader.Adress, reader.Phone, reader.ID)
 	return err
 }
