@@ -141,11 +141,13 @@ func main() {
 	}
 	err = UpdateReader(db, updatedReader)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Ошибка при обновлении читателя: %v\n", err)
+		return
 	}
 
 	err = DeleteReader(db, 4)
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Ошибка при удалении читателя: %v\n", err)
+		return
 	}
 }
