@@ -71,8 +71,8 @@ func GetReader(db *sql.DB, readerNum int) (*Reader, error) {
 	return &reader, nil
 }
 
-	func (r Reader) String() string {
-		return fmt.Sprintf(`
+func (r Reader) String() string {
+	return fmt.Sprintf(`
 	Информация о читателе:
 	========================
 	Номер читателя: %d
@@ -81,7 +81,18 @@ func GetReader(db *sql.DB, readerNum int) (*Reader, error) {
 	Телефон:      %s
 	========================
 	`, r.ID, r.Name, r.Adress, r.Phone)
-	}
+}
+
+func addReader(db *sql.DB, name string, address string, phone int64) (int64, error) {
+	sqlStatement := `
+			INSERT INTO "readers" ("reader_name", "reader_adress", "reader_phone")
+			VALUES ($1, $2, $3)
+			RETURNING reader_num`
+
+	var readerID int64
+	err := db.QueryRow(sqlStatement, name, address, phone).Scan(&readerID)
+	return readerID, err
+}
 
 func main() {
 	config := Config{
@@ -99,7 +110,14 @@ func main() {
 	}
 	defer db.Close()
 
-	reader, err := GetReader(db, 2)
+	readerID, err := addReader(db, "Гаценко", "Зеленая, 3", 34316264489684)
+	if err != nil {
+		log.Printf("Ошибка при добавлении читателя: %v\n", err)
+		return
+	}
+	fmt.Printf("Читатель успешно добавлен с ID: %d\n", readerID)
+
+	reader, err := GetReader(db, 27)
 	if err != nil {
 		log.Fatal(err)
 		return
