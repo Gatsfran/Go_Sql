@@ -85,25 +85,21 @@ func (r Reader) String() string {
 
 func AddReader(db *sql.DB, name string, address string, phone string) (int64, error) {
 	sqlStatement := `
-INSERT INTO "readers" 
-		("reader_name", 
-		"reader_adress", 
-		"reader_phone")
-	VALUES ($1, $2, $3)
-	RETURNING reader_num`
+					INSERT INTO readers (reader_name, reader_adress, reader_phone) VALUES ($1, $2, $3) RETURNING reader_num`
 
 	var readerID int64
 	err := db.QueryRow(sqlStatement, name, address, phone).Scan(&readerID)
 	return readerID, err
 }
-func UpdateReader(db *sql.DB, readerNum int, name, address, phone string) error {
-	query := `
-UPDATE readers SET 
-		reader_name = $1, 
-		reader_adress = $2, 
-		reader_phone = $3 
-	WHERE reader_num = $4`
-	_, err := db.Exec(query, name, address, phone, readerNum)
+func UpdateReader(db *sql.DB, reader Reader) error {
+	query := `UPDATE readers SET reader_name = $1, reader_adress = $2, reader_phone = $3 WHERE reader_num = $4`
+	_, err := db.Exec(query, reader.Name, reader.Adress, reader.Phone, reader.ID)
+	return err
+}
+
+func DeleteReader(db *sql.DB, readerNum int) error {
+	query := `DELETE FROM readers WHERE reader_num = $1`
+	_, err := db.Exec(query, readerNum)
 	return err
 }
 
@@ -137,7 +133,18 @@ func main() {
 	}
 	fmt.Println(reader)
 
-	err = UpdateReader(db, 3, "ДжейсонСтэтхэм", "Партизанская 12", "555567")
+	updatedReader := Reader{
+		ID:     1,
+		Name:   "Вася",
+		Adress: "Мира, 6",
+		Phone:  "555545678",
+	}
+	err = UpdateReader(db, updatedReader)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = DeleteReader(db, 4)
 	if err != nil {
 		log.Fatal(err)
 	}
