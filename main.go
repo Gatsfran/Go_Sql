@@ -71,6 +71,33 @@ func GetReader(db *sql.DB, readerNum int) (*Reader, error) {
 	return &reader, nil
 }
 
+func ListReader(db *sql.DB) ([]Reader, error) {
+	query := "SELECT reader_num, reader_name, reader_adress, reader_phone FROM readers"
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var readers []Reader
+	for rows.Next() {
+		var reader Reader
+		err = rows.Scan(
+			&reader.ID,
+			&reader.Name,
+			&reader.Adress,
+			&reader.Phone,
+		)
+		if err != nil {
+			return nil, err
+		}
+		readers = append(readers, reader)
+	}
+
+	return readers, nil
+}
+
 func (r Reader) String() string {
 	return fmt.Sprintf(`
 	Информация о читателе:
@@ -132,6 +159,21 @@ func main() {
 		return
 	}
 	fmt.Println(reader)
+
+	readers, err := ListReader(db)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	for _, reader := range readers {
+		fmt.Printf("Номер: %d, Имя: %s, Адрес: %s, Телефон: %s\n",
+			reader.ID,
+			reader.Name,
+			reader.Adress,
+			reader.Phone,
+		)
+	}
 
 	updatedReader := Reader{
 		ID:     1,
