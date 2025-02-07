@@ -83,15 +83,28 @@ func (r Reader) String() string {
 	`, r.ID, r.Name, r.Adress, r.Phone)
 }
 
-func addReader(db *sql.DB, name string, address string, phone int64) (int64, error) {
+func AddReader(db *sql.DB, name string, address string, phone string) (int64, error) {
 	sqlStatement := `
-			INSERT INTO "readers" ("reader_name", "reader_adress", "reader_phone")
-			VALUES ($1, $2, $3)
-			RETURNING reader_num`
+INSERT INTO "readers" 
+		("reader_name", 
+		"reader_adress", 
+		"reader_phone")
+	VALUES ($1, $2, $3)
+	RETURNING reader_num`
 
 	var readerID int64
 	err := db.QueryRow(sqlStatement, name, address, phone).Scan(&readerID)
 	return readerID, err
+}
+func UpdateReader(db *sql.DB, readerNum int, name, address, phone string) error {
+	query := `
+UPDATE readers SET 
+		reader_name = $1, 
+		reader_adress = $2, 
+		reader_phone = $3 
+	WHERE reader_num = $4`
+	_, err := db.Exec(query, name, address, phone, readerNum)
+	return err
 }
 
 func main() {
@@ -110,7 +123,7 @@ func main() {
 	}
 	defer db.Close()
 
-	readerID, err := addReader(db, "Гаценко", "Зеленая, 3", 34316264489684)
+	readerID, err := AddReader(db, "Гаценко", "Зеленая, 3", "34316264489684")
 	if err != nil {
 		log.Printf("Ошибка при добавлении читателя: %v\n", err)
 		return
@@ -124,4 +137,8 @@ func main() {
 	}
 	fmt.Println(reader)
 
+	err = UpdateReader(db, 3, "ДжейсонСтэтхэм", "Партизанская 12", "555567")
+	if err != nil {
+		log.Fatal(err)
+	}
 }
