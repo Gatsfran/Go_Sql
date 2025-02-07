@@ -71,15 +71,17 @@ func GetReader(db *sql.DB, readerNum int) (*Reader, error) {
 	return &reader, nil
 }
 
-func PrintReader(reader *Reader) {
-	fmt.Printf("\nИнформация о читателе:\n")
-	fmt.Printf("========================\n")
-	fmt.Printf("Номер читателя: %d\n", reader.ID)
-	fmt.Printf("Имя читателя:  %s\n", reader.Name)
-	fmt.Printf("Адрес:        %s\n", reader.Adress)
-	fmt.Printf("Телефон:      %s\n", reader.Phone)
-	fmt.Printf("========================\n")
-}
+	func (r Reader) String() string {
+		return fmt.Sprintf(`
+	Информация о читателе:
+	========================
+	Номер читателя: %d
+	Имя читателя:  %s
+	Адрес:        %s
+	Телефон:      %s
+	========================
+	`, r.ID, r.Name, r.Adress, r.Phone)
+	}
 
 func main() {
 	config := Config{
@@ -97,15 +99,11 @@ func main() {
 	}
 	defer db.Close()
 
-	reader, err := GetReader(db, 1)
+	reader, err := GetReader(db, 2)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
-	PrintReader(reader)
-
-	insertStmt := `insert into "readers" ("reader_name", "reader_adress", "reader_phone") 
-    values('Гаценко', 'Зеленая, 3', 1111000)`
-	fmt.Println("Добавлен новый читатель: ", insertStmt)
+	fmt.Println(reader)
 
 }
