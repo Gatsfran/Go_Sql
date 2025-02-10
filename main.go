@@ -110,15 +110,15 @@ func (r Reader) String() string {
 	`, r.ID, r.Name, r.Adress, r.Phone)
 }
 
-func AddReader(db *sql.DB, name string, address string, phone string) (int64, error) {
+func AddReader(db *sql.DB, reader Reader) (int64, error) {
 	sqlStatement := `
 	INSERT INTO readers 
-		(reader_name, reader_adress, reader_phone) 
+	(reader_name, reader_adress, reader_phone) 
 	VALUES ($1, $2, $3) 
 	RETURNING reader_num`
 
 	var readerID int64
-	err := db.QueryRow(sqlStatement, name, address, phone).Scan(&readerID)
+	err := db.QueryRow(sqlStatement, reader.Name, reader.Adress, reader.Phone, reader.ID).Scan(&readerID)
 	return readerID, err
 }
 func UpdateReader(db *sql.DB, reader Reader) error {
@@ -154,12 +154,29 @@ func main() {
 	}
 	defer db.Close()
 
-	readerID, err := AddReader(db, "Гаценко", "Зеленая, 3", "34316264489684")
+	addReader := Reader{
+		Name:   "Вася",
+		Adress: "Мира, 6",
+		Phone:  "555545678",
+	}
+	readerID, err := AddReader(db, addReader)
 	if err != nil {
 		log.Printf("Ошибка при добавлении читателя: %v\n", err)
 		return
 	}
 	fmt.Printf("Читатель успешно добавлен с ID: %d\n", readerID)
+
+	updatedReader := Reader{
+		ID:     1,
+		Name:   "Вася",
+		Adress: "Мира, 6",
+		Phone:  "555545678",
+	}
+	err = UpdateReader(db, updatedReader)
+	if err != nil {
+		log.Printf("Ошибка при обновлении читателя: %v\n", err)
+		return
+	}
 
 	reader, err := GetReader(db, 27)
 	if err != nil {
@@ -183,22 +200,9 @@ func main() {
 		)
 	}
 
-	updatedReader := Reader{
-		ID:     1,
-		Name:   "Вася",
-		Adress: "Мира, 6",
-		Phone:  "555545678",
-	}
-	err = UpdateReader(db, updatedReader)
-	if err != nil {
-		log.Printf("Ошибка при обновлении читателя: %v\n", err)
-		return
-	}
-
 	err = DeleteReader(db, 4)
 	if err != nil {
 		log.Printf("Ошибка при удалении читателя: %v\n", err)
 		return
 	}
 }
-//проверка связи
