@@ -2,8 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
+	"strconv"
+	"github.com/gorilla/mux"
 
 	_ "github.com/lib/pq"
 )
@@ -154,55 +158,76 @@ func main() {
 	}
 	defer db.Close()
 
-	addReader := Reader{
-		Name:   "Вася",
-		Adress: "Мира, 6",
-		Phone:  "555545678",
-	}
-	readerID, err := AddReader(db, addReader)
-	if err != nil {
-		log.Printf("Ошибка при добавлении читателя: %v\n", err)
-		return
-	}
-	fmt.Printf("Читатель успешно добавлен с ID: %d\n", readerID)
+	r := mux.NewRouter()
 
-	updatedReader := Reader{
-		ID:     1,
-		Name:   "Вася",
-		Adress: "Мира, 6",
-		Phone:  "555545678",
-	}
-	err = UpdateReader(db, updatedReader)
-	if err != nil {
-		log.Printf("Ошибка при обновлении читателя: %v\n", err)
-		return
-	}
+	r.HandleFunc("/readers", func(w http.ResponseWriter, r *http.Request) {
+		switch r.Method {
+		case http.MethodGet:
+			readers, err := ListReader(db)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			json.NewEncoder(w).Encode(readers)
+		case http.MethodPost:
+			var reader Reader
+			if err := json.NewDecoder(r.Body).Decode(&reader); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			id, err := AddReader(db, reader)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusCreated)
+			fmt.Fprintf(w, "Добавлен читатель с ID: %d", id)
+		default:
+			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		}
+	}).Methods("GET", "POST")
 
-	reader, err := GetReader(db, 27)
-	if err != nil {
-		log.Fatal(err)
-		return
-	}
-	fmt.Println(reader)
+	r.HandleFunc("/readers/{id}", func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+		id, err := strconv.Atoi(vars["id"])
+		if err != nil {
+			http.Error(w, "Неверный ID читателя", http.StatusBadRequest)
+			return
+		}
 
-	readers, err := ListReader(db)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
+		switch r.Method {
+		case http.MethodGet:
+			reader, err := GetReader(db, id)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusNotFound)
+				return
+			}
+			json.NewEncoder(w).Encode(reader)
+		case http.MethodPut:
+			var reader Reader
+			if err := json.NewDecoder(r.Body).Decode(&reader); err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			reader.ID = id
+			if err := UpdateReader(db, reader); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "Читатель с ID %d обновлен", id)
+		case http.MethodDelete:
+			if err := DeleteReader(db, id); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "Читатель с ID %d удален", id)
+		default:
+			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
+		}
+	}).Methods("GET", "PUT", "DELETE")
 
-	for _, reader := range readers {
-		fmt.Printf("Номер: %d, Имя: %s, Адрес: %s, Телефон: %s\n",
-			reader.ID,
-			reader.Name,
-			reader.Adress,
-			reader.Phone,
-		)
-	}
-
-	err = DeleteReader(db, 4)
-	if err != nil {
-		log.Printf("Ошибка при удалении читателя: %v\n", err)
-		return
-	}
+	log.Println("Сервер запущен на :8080")
+	log.Fatal(http.ListenAndServe(":8080", r))
 }
