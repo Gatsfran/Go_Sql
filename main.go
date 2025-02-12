@@ -7,8 +7,8 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"github.com/gorilla/mux"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -21,10 +21,10 @@ type Config struct {
 }
 
 type Reader struct {
-	ID     int    `json:"num"`
-	Name   string `json:"name"`
-	Adress string `json:"adress"`
-	Phone  string `json:"phone"`
+	ID     int     `json:"num"`
+	Name   string  `json:"name"`
+	Adress *string `json:"adress"`
+	Phone  string  `json:"phone"`
 }
 
 func NewDatabaseConnection(cfg Config) (*sql.DB, error) {
@@ -123,6 +123,7 @@ func AddReader(db *sql.DB, reader Reader) (int64, error) {
 
 	var readerID int64
 	err := db.QueryRow(sqlStatement, reader.Name, reader.Adress, reader.Phone, reader.ID).Scan(&readerID)
+
 	return readerID, err
 }
 func UpdateReader(db *sql.DB, reader Reader) error {
@@ -132,13 +133,22 @@ func UpdateReader(db *sql.DB, reader Reader) error {
 		reader_adress = $2, 
 		reader_phone = $3 
 	WHERE reader_num = $4`
+
 	_, err := db.Exec(query, reader.Name, reader.Adress, reader.Phone, reader.ID)
+
 	return err
 }
 
 func DeleteReader(db *sql.DB, readerNum int) error {
-	query := `DELETE FROM readers WHERE reader_num = $1`
+	query := `
+	WITH
+		(
+			DELETE FROM books_in_use WHERE reader_num = $1
+		)
+	DELETE FROM readers WHERE reader_num = $1`
+
 	_, err := db.Exec(query, readerNum)
+
 	return err
 }
 
@@ -165,23 +175,28 @@ func main() {
 		case http.MethodGet:
 			readers, err := ListReader(db)
 			if err != nil {
+				log.Printf("Ошибка при получении списка читателей: %v", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			json.NewEncoder(w).Encode(readers)
+
 		case http.MethodPost:
 			var reader Reader
 			if err := json.NewDecoder(r.Body).Decode(&reader); err != nil {
+				log.Printf("Ошибка при декодировании тела запроса: %v", err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			id, err := AddReader(db, reader)
 			if err != nil {
+				log.Printf("Ошибка при добавлении читателя: %v", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
 			fmt.Fprintf(w, "Добавлен читатель с ID: %d", id)
+
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
@@ -191,6 +206,7 @@ func main() {
 		vars := mux.Vars(r)
 		id, err := strconv.Atoi(vars["id"])
 		if err != nil {
+			log.Printf("Неверный ID читателя: %v", err)
 			http.Error(w, "Неверный ID читателя", http.StatusBadRequest)
 			return
 		}
@@ -199,30 +215,37 @@ func main() {
 		case http.MethodGet:
 			reader, err := GetReader(db, id)
 			if err != nil {
+				log.Printf("Ошибка при получении читателя с ID %d: %v", id, err)
 				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			}
 			json.NewEncoder(w).Encode(reader)
+
 		case http.MethodPut:
 			var reader Reader
 			if err := json.NewDecoder(r.Body).Decode(&reader); err != nil {
+				log.Printf("Ошибка при декодировании тела запроса: %v", err)
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
 			}
 			reader.ID = id
 			if err := UpdateReader(db, reader); err != nil {
+				log.Printf("Ошибка при обновлении читателя с ID %d: %v", id, err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "Читатель с ID %d обновлен", id)
+
 		case http.MethodDelete:
 			if err := DeleteReader(db, id); err != nil {
+				log.Printf("Ошибка при удалении читателя с ID %d: %v", id, err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "Читатель с ID %d удален", id)
+
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
@@ -230,5 +253,4 @@ func main() {
 
 	log.Println("Сервер запущен на :8080")
 	log.Fatal(http.ListenAndServe(":8080", r))
-	
 }
