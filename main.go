@@ -179,7 +179,10 @@ func main() {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			json.NewEncoder(w).Encode(readers)
+			if err := json.NewEncoder(w).Encode(readers); err != nil {
+				log.Printf("Ошибка при кодировании списка читателей в JSON: %v", err)
+				return
+			}
 
 		case http.MethodPost:
 			var reader Reader
@@ -195,7 +198,10 @@ func main() {
 				return
 			}
 			w.WriteHeader(http.StatusCreated)
-			fmt.Fprintf(w, "Добавлен читатель с ID: %d", id)
+			if _, err := fmt.Fprintf(w, "Добавлен читатель с ID: %d", id); err != nil {
+				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
+				return
+			}
 
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
@@ -219,7 +225,11 @@ func main() {
 				http.Error(w, err.Error(), http.StatusNotFound)
 				return
 			}
-			json.NewEncoder(w).Encode(reader)
+			if err := json.NewEncoder(w).Encode(reader); err != nil {
+				log.Printf("Ошибка при кодировании читателя в JSON: %v", err)
+				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
+				return
+			}
 
 		case http.MethodPut:
 			var reader Reader
@@ -235,7 +245,11 @@ func main() {
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Читатель с ID %d обновлен", id)
+			if _, err := fmt.Fprintf(w, "Читатель с ID %d обновлен", id); err != nil {
+				log.Printf("Ошибка при записи ответа: %v", err)
+				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
+				return
+			}
 
 		case http.MethodDelete:
 			if err := DeleteReader(db, id); err != nil {
@@ -244,7 +258,11 @@ func main() {
 				return
 			}
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Читатель с ID %d удален", id)
+			if _, err := fmt.Fprintf(w, "Читатель с ID %d удален", id); err != nil {
+				log.Printf("Ошибка при записи ответа: %v", err)
+				http.Error(w, "Ошибка при формировании ответа", http.StatusInternalServerError)
+				return
+			}
 
 		default:
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
