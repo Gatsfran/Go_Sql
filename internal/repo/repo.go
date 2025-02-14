@@ -105,7 +105,7 @@ func (d *DB) AddReader(reader entity.Reader) (int64, error) {
 
 	return readerID, err
 }
-func(d *DB) UpdateReader (reader entity.Reader) error {
+func (d *DB) UpdateReader(reader entity.Reader) error {
 	query := `
 	UPDATE readers SET 
 		reader_name = $1, 
