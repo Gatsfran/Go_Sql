@@ -3,13 +3,18 @@ package repo
 import (
 	"database/sql"
 	"fmt"
+
 	"github.com/Gatsfran/Go_Sql/internal/config"
 	"github.com/Gatsfran/Go_Sql/internal/entity"
 
 	_ "github.com/lib/pq"
 )
 
-func NewDatabaseConnection(cfg config.Config) (*sql.DB, error) {
+type DB struct {
+	db *sql.DB
+}
+
+func NewDatabaseConnection(cfg config.Config) (*DB, error) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
 
@@ -23,10 +28,14 @@ func NewDatabaseConnection(cfg config.Config) (*sql.DB, error) {
 		return nil, fmt.Errorf("ошибка при проверке подключения к БД: %w", err)
 	}
 
-	return db, nil
+	return &DB{db: db}, nil
 }
 
-func GetReader(db *sql.DB, readerNum int) (*entity.Reader, error) {
+func (d *DB) Close() error {
+	return d.db.Close()
+}
+
+func (d *DB) GetReader(readerNum int) (*entity.Reader, error) {
 	query := `
 	SELECT 
 		reader_num, 
@@ -37,7 +46,7 @@ func GetReader(db *sql.DB, readerNum int) (*entity.Reader, error) {
 		readers 
 	WHERE reader_num = $1`
 
-	row := db.QueryRow(query, readerNum)
+	row := d.db.QueryRow(query, readerNum)
 	reader := entity.Reader{}
 
 	err := row.Scan(
@@ -57,10 +66,10 @@ func GetReader(db *sql.DB, readerNum int) (*entity.Reader, error) {
 	return &reader, nil
 }
 
-func ListReader(db *sql.DB) ([]entity.Reader, error) {
+func (d *DB) ListReader() ([]entity.Reader, error) {
 	query := "SELECT reader_num, reader_name, reader_adress, reader_phone FROM readers"
 
-	rows, err := db.Query(query)
+	rows, err := d.db.Query(query)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +93,7 @@ func ListReader(db *sql.DB) ([]entity.Reader, error) {
 	return readers, nil
 }
 
-func AddReader(db *sql.DB, reader entity.Reader) (int64, error) {
+func (d *DB) AddReader(reader entity.Reader) (int64, error) {
 	sqlStatement := `
 	INSERT INTO readers 
 	(reader_name, reader_adress, reader_phone) 
@@ -92,11 +101,11 @@ func AddReader(db *sql.DB, reader entity.Reader) (int64, error) {
 	RETURNING reader_num`
 
 	var readerID int64
-	err := db.QueryRow(sqlStatement, reader.Name, reader.Adress, reader.Phone, reader.ID).Scan(&readerID)
+	err := d.db.QueryRow(sqlStatement, reader.Name, reader.Adress, reader.Phone, reader.ID).Scan(&readerID)
 
 	return readerID, err
 }
-func UpdateReader(db *sql.DB, reader entity.Reader) error {
+func(d *DB) UpdateReader (reader entity.Reader) error {
 	query := `
 	UPDATE readers SET 
 		reader_name = $1, 
@@ -104,12 +113,12 @@ func UpdateReader(db *sql.DB, reader entity.Reader) error {
 		reader_phone = $3 
 	WHERE reader_num = $4`
 
-	_, err := db.Exec(query, reader.Name, reader.Adress, reader.Phone, reader.ID)
+	_, err := d.db.Exec(query, reader.Name, reader.Adress, reader.Phone, reader.ID)
 
 	return err
 }
 
-func DeleteReader(db *sql.DB, readerNum int) error {
+func (d *DB) DeleteReader(readerNum int) error {
 	query := `
 	WITH
 		(
@@ -117,7 +126,7 @@ func DeleteReader(db *sql.DB, readerNum int) error {
 		)
 	DELETE FROM readers WHERE reader_num = $1`
 
-	_, err := db.Exec(query, readerNum)
+	_, err := d.db.Exec(query, readerNum)
 
 	return err
 }

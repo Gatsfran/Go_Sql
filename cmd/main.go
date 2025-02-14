@@ -6,7 +6,7 @@ import (
 	"github.com/Gatsfran/Go_Sql/internal/config"
 	"github.com/Gatsfran/Go_Sql/internal/controller"
 	"github.com/Gatsfran/Go_Sql/internal/repo"
-	"github.com/gorilla/mux"
+	
 )
 
 func main() {
@@ -19,11 +19,9 @@ func main() {
 	}
 	defer db.Close()
 
-	r := mux.NewRouter()
-
-	controller.RegisterReaderRoutes(r, db)
+	router := controller.NewRouter(db)
+	
 
 	log.Println("Сервер запущен на :8080")
-	log.Fatal(http.ListenAndServe(":8080", r))
-	
+	log.Fatal(http.ListenAndServe(":8080", router))
 }

@@ -18,5 +18,5 @@ func (r Reader) String() string {
 	Адрес:        %s
 	Телефон:      %s
 	========================
-	`, r.ID, r.Name, r.Adress, r.Phone)
+	`, r.ID, r.Name, *r.Adress, r.Phone)
 }
