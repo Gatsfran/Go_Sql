@@ -14,7 +14,7 @@ type DB struct {
 	db *sql.DB
 }
 
-func NewDatabaseConnection(cfg config.Config) (*DB, error) {
+func New(cfg config.Config) (*DB, error) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
 

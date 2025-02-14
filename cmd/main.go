@@ -12,14 +12,14 @@ import (
 func main() {
 	cfg := config.LoadConfig()
 
-	db, err := repo.NewDatabaseConnection(cfg)
+	db, err := repo.New(cfg)
 	if err != nil {
 		log.Fatal(err)
 		return
 	}
 	defer db.Close()
 
-	router := controller.NewRouter(db)
+	router := controller.New(db)
 	
 
 	log.Println("Сервер запущен на :8080")

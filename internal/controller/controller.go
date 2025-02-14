@@ -17,17 +17,17 @@ type Router struct {
 	db     *repo.DB
 }
 
-func NewRouter(db *repo.DB) *Router {
+func New(db *repo.DB) *Router {
 	r := mux.NewRouter()
 	router := &Router{
 		router: r,
 		db:     db,
 	}
-	router.NewRegisterReaderRoutes()
+	router.newRegisterReaderRoutes()
 	return router
 }
 
-func (r *Router) NewRegisterReaderRoutes() {
+func (r *Router) newRegisterReaderRoutes() {
 	r.router.HandleFunc("/readers", func(w http.ResponseWriter, req *http.Request) {
 		switch req.Method {
 		case http.MethodGet:
