@@ -12,7 +12,7 @@ import (
 func main() {
 	cfg := config.NewCfg()
 
-	db, err := repo.New(cfg)
+	db, err := repo.New(cfg.Postgres)
 	if err != nil {
 		log.Fatal(err)
 		return
@@ -21,6 +21,7 @@ func main() {
 
 	router := controller.New(db)
 
-	log.Println("Сервер запущен на :8080")
-	log.Fatal(http.ListenAndServe(cfg.Port, router))
+	serverAddr := ":" + cfg.Server.Port
+	log.Printf("Сервер запущен на %s\n", serverAddr)
+	log.Fatal(http.ListenAndServe(serverAddr, router))
 }
