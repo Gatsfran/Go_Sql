@@ -17,6 +17,10 @@ type Router struct {
 	db     *repo.DB
 }
 
+func (r *Router) ServeHTTP(http.ResponseWriter, *http.Request) {
+	panic("unimplemented")
+}
+
 func New(db *repo.DB) *Router {
 	r := mux.NewRouter()
 	router := &Router{
@@ -122,8 +126,4 @@ func (r *Router) newRegisterReaderRoutes() {
 			http.Error(w, "Метод не поддерживается", http.StatusMethodNotAllowed)
 		}
 	}).Methods("GET", "PUT", "DELETE")
-}
-
-func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	r.router.ServeHTTP(w, req)
 }

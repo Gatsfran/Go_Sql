@@ -14,7 +14,7 @@ type DB struct {
 	db *sql.DB
 }
 
-func New(cfg config.PostgresConfig) (*DB, error) {
+func New(cfg config.Postgres) (*DB, error) {
 	connectionString := fmt.Sprintf("host=%s port=%s user=%s password=%s dbname=%s sslmode=disable",
 		cfg.Host, cfg.Port, cfg.Username, cfg.Password, cfg.Database)
 
@@ -38,12 +38,12 @@ func (d *DB) Close() error {
 func (d *DB) GetReader(readerNum int) (*entity.Reader, error) {
 	query := `
 	SELECT 
-		reader_num, 
-		reader_name, 
-		reader_adress, 
-		reader_phone 
+	reader_num, 
+	reader_name, 
+	reader_adress, 
+	reader_phone 
 	FROM 
-		readers 
+	readers 
 	WHERE reader_num = $1`
 
 	row := d.db.QueryRow(query, readerNum)
@@ -95,8 +95,11 @@ func (d *DB) ListReader() ([]entity.Reader, error) {
 
 func (d *DB) AddReader(reader entity.Reader) (int64, error) {
 	sqlStatement := `
-	INSERT INTO readers 
-	(reader_name, reader_adress, reader_phone) 
+		INSERT INTO readers  (
+		reader_name, 
+		reader_adress, 
+		reader_phone
+	) 
 	VALUES ($1, $2, $3) 
 	RETURNING reader_num`
 

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -10,7 +11,7 @@ import (
 )
 
 func main() {
-	cfg := config.NewCfg()
+	cfg := config.New()
 
 	db, err := repo.New(cfg.Postgres)
 	if err != nil {
@@ -21,7 +22,7 @@ func main() {
 
 	router := controller.New(db)
 
-	serverAddr := ":" + cfg.Server.Port
-	log.Printf("Сервер запущен на %s\n", serverAddr)
+	serverAddr := fmt.Sprintf(":%s", cfg.Server.Port)
+	log.Printf("Сервер запущен на порту: %s\n", serverAddr)
 	log.Fatal(http.ListenAndServe(serverAddr, router))
 }

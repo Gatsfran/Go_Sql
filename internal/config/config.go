@@ -3,31 +3,31 @@ package config
 import (
 	"log"
 
+	"github.com/caarlos0/env"
 	"github.com/joho/godotenv"
-	"github.com/kelseyhightower/envconfig"
 )
 
-type PostgresConfig struct {
-	Host     string `envconfig:"DB_HOST" default:"localhost"`
-	Port     string `envconfig:"DB_PORT" default:"5400"`
-	Username string `envconfig:"DB_USERNAME" default:"postgres"`
-	Password string `envconfig:"DB_PASSWORD" default:"docker"`
-	Database string `envconfig:"DB_NAME" default:"postgres"`
+type Postgres struct {
+	Host     string `env:"DB_HOST" envDefault:"localhost"`
+	Port     string `env:"DB_PORT" envDefault:"5400"`
+	Username string `env:"DB_USERNAME" envDefault:"postgres"`
+	Password string `env:"DB_PASSWORD" envDefault:"docker"`
+	Database string `env:"DB_NAME" envDefault:"postgres"`
 }
-type ServerConfig struct {
-	Port string `envconfig:"SERVER_PORT" default:"8080"`
+type Server struct {
+	Port string `env:"SERVER_PORT" envDefault:"8080"`
 }
 type Config struct {
-	Postgres PostgresConfig
-	Server   ServerConfig
+	Postgres Postgres
+	Server   Server
 }
 
-func NewCfg() Config {
+func New() Config {
 	if err := godotenv.Load(); err != nil {
 		log.Println("Файл .env не найден, используются переменные окружения по умолчанию")
 	}
 	var cfg Config
-	if err := envconfig.Process("", &cfg); err != nil {
+	if err := env.Parse(&cfg); err != nil {
 		log.Fatalf("Ошибка при парсинге переменных окружения: %v", err)
 	}
 	return cfg
