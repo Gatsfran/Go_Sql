@@ -1,0 +1,136 @@
+openapi: 3.0.0
+info:
+  title: Library Readers API
+  description: API для управления читателями библиотеки
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080
+    description: Локальный сервер разработки
+paths:
+  /readers:
+    get:
+      summary: Получить список всех читателей
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Reader'
+        '500':
+          description: Внутренняя ошибка сервера
+    post:
+      summary: Добавить нового читателя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reader'
+      responses:
+        '201':
+          description: Читатель успешно добавлен
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Добавлен читатель с ID: 1"
+        '400':
+          description: Неверный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+  /readers/{id}:
+    get:
+      summary: Получить информацию о читателе по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID читателя
+      responses:
+        '200':
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reader'
+        '400':
+          description: Неверный ID читателя
+        '404':
+          description: Читатель не найден
+        '500':
+          description: Внутренняя ошибка сервера
+    put:
+      summary: Обновить информацию о читателе по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID читателя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Reader'
+      responses:
+        '200':
+          description: Читатель успешно обновлен
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Читатель с ID 1 обновлен"
+        '400':
+          description: Неверный запрос
+        '500':
+          description: Внутренняя ошибка сервера
+    delete:
+      summary: Удалить читателя по ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: ID читателя
+      responses:
+        '200':
+          description: Читатель успешно удален
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: "Читатель с ID 1 удален"
+        '400':
+          description: Неверный ID читателя
+        '500':
+          description: Внутренняя ошибка сервера
+components:
+  schemas:
+    Reader:
+      type: object
+      properties:
+        num:
+          type: integer
+          description: Номер читателя
+        name:
+          type: string
+          description: Имя читателя
+        adress:
+          type: string
+          nullable: true
+          description: Адрес читателя
+        phone:
+          type: string
+          description: Телефон читателя
+      required:
+        - num
+        - name
+        - phone
